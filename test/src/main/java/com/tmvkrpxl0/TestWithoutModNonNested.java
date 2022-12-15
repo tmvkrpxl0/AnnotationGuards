@@ -2,6 +2,6 @@ package com.tmvkrpxl0;
 
 import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber
+/*@Mod.EventBusSubscriber
 public class TestWithoutModNonNested {
-}
+}*/
