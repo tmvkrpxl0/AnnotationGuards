@@ -1,10 +1,5 @@
 package com.tmvkrpxl0.annotationguards;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.event.IModBusEvent;
-
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.RoundEnvironment;
@@ -19,7 +14,7 @@ import java.util.Set;
 public class SubscribeEventGuard extends AbstractProcessor {
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Set.of(SubscribeEvent.class.getCanonicalName());
+        return Set.of("net.minecraftforge.eventbus.api.SubscribeEvent");
     }
 
     @Override
@@ -27,7 +22,7 @@ public class SubscribeEventGuard extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         Types types = processingEnv.getTypeUtils();
         Elements elements = processingEnv.getElementUtils();
-        TypeElement eventElement = elements.getTypeElement(Event.class.getName());
+        TypeElement eventElement = elements.getTypeElement("net.minecraftforge.eventbus.api.Event");
 
         String EBSName = "net.minecraftforge.fml.common.Mod.EventBusSubscriber";
         var ebsMembers = elements.getAllMembers(elements.getTypeElement(EBSName)).stream().filter(member -> {
@@ -41,7 +36,12 @@ public class SubscribeEventGuard extends AbstractProcessor {
         Messager messager = processingEnv.getMessager();
         Set<? extends Element> root = roundEnv.getRootElements();
 
-        final Set<? extends ExecutableElement> executables = (Set<? extends ExecutableElement>) roundEnv.getElementsAnnotatedWith(SubscribeEvent.class);
+        final Set<? extends ExecutableElement> executables = (Set<? extends ExecutableElement>) roundEnv.getElementsAnnotatedWith(
+                elements.getTypeElement("net.minecraftforge.eventbus.api.SubscribeEvent")
+        );
+
+        messager.printMessage(Diagnostic.Kind.NOTE, "Forge Event Annotation Processor Guard by tmvkrpxl0 is activated!");
+
         for (ExecutableElement executable : executables) {
             Set<Modifier> modifiers = executable.getModifiers();
             List<? extends VariableElement> arguments = executable.getParameters();
@@ -52,6 +52,7 @@ public class SubscribeEventGuard extends AbstractProcessor {
 
             if (arguments.size() != 1) {
                 messager.printMessage(Diagnostic.Kind.ERROR, String.format("%s: @SubscribeEvent needs single argument method!", root), executable);
+                continue;
             }
 
             VariableElement eventArgument = arguments.get(0);
@@ -69,18 +70,18 @@ public class SubscribeEventGuard extends AbstractProcessor {
                 }
                 var ebsValues = elements.getElementValuesWithDefaults(ebs);
 
-                List<Dist> ebsSides = (List<Dist>) ebsValues.get((ExecutableElement) ebsMembers.get(0)).getValue();
+                List ebsSides = (List) ebsValues.get((ExecutableElement) ebsMembers.get(0)).getValue();
                 VariableElement ebsBus = (VariableElement) ebsValues.get((ExecutableElement) ebsMembers.get(1)).getValue();
 
                 boolean isEventClassClient = eventArgument.asType().toString().contains(clientEventPackage); // Should it also check for dedicated-server only events?
 
-                if (isEventClassClient && !ebsSides.contains(Dist.CLIENT)) {
+                if (isEventClassClient && ebsSides.stream().noneMatch(side -> side.toString().contentEquals("CLIENT"))) {
                     messager.printMessage(Diagnostic.Kind.WARNING,
                             String.format("%s: This event handler will not listen to specified event, as the event is client-only event and @EventBusSubscriber of enclosing class is configured to ignore clients", root),
                             executable);
                 }
 
-                boolean isEventModBus = types.isSubtype(eventArgument.asType(), elements.getTypeElement(IModBusEvent.class.getName()).asType());
+                boolean isEventModBus = types.isSubtype(eventArgument.asType(), elements.getTypeElement("net.minecraftforge.fml.event.IModBusEvent").asType());
 
                 if ("FORGE".contentEquals(ebsBus.toString()) && isEventModBus) {
                     messager.printMessage(Diagnostic.Kind.WARNING,
