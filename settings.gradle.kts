@@ -5,5 +5,5 @@ pluginManagement {
     }
 }
 
-rootProject.name = "ForgeAnnotationGuards"
+rootProject.name = "AnnotationGuards"
 include("test")
