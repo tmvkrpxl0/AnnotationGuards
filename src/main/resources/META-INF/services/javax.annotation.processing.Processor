@@ -1,1 +1,2 @@
-com.tmvkrpxl0.SubscribeEventGuard
+com.tmvkrpxl0.annotationguards.SubscribeEventGuard
+com.tmvkrpxl0.annotationguards.EventBusSubscriberGuard
