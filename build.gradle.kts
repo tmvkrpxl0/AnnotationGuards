@@ -14,15 +14,27 @@ val forge_version: String by project
 
 java.toolchain.languageVersion.set(JavaLanguageVersion.of(17))
 
+configurations {
+    apiElements {
+        artifacts.clear()
+    }
+    runtimeElements {
+        setExtendsFrom(emptySet())
+        // Publish the jarJar
+        artifacts.clear()
+    }
+}
+
 minecraft {
     mappings("official", mc_version)
 }
 
+repositories {
+    mavenLocal()
+}
+
 dependencies {
     minecraft("net.minecraftforge:forge:1.19.3-44.0.18")
-    // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
-    implementation("org.slf4j:slf4j-simple:2.0.1")
-
 }
 
 tasks.withType<Jar> {
@@ -40,6 +52,15 @@ tasks.withType<Jar> {
     }
 
     finalizedBy("reobfJar")
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            artifactId = "annotationguards"
+            from(components["java"])
+        }
+    }
 }
 
 tasks.withType<JavaCompile>().configureEach {
